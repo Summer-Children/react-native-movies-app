@@ -72,6 +72,7 @@ export function DropdownMenuMovies({
                 className={`flex-row items-center gap-4 px-8 py-2 rounded-sm ${
                   item.value === selectedOption ? "bg-green-500 " : "bg-white "
                 }`}
+                style={{ backgroundColor: item.value === selectedOption ? "#22c55e" : "#ffffff" }}
                 onPress={() => handleSelect(item.value)}
               >
                 <Text
@@ -80,6 +81,7 @@ export function DropdownMenuMovies({
                       ? " text-white"
                       : " text-black"
                   }`}
+                  style={{ color: item.value === selectedOption ? "#ffffff" : "#000000" }}
                 >
                   {item.label}
                 </Text>

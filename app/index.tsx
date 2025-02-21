@@ -11,13 +11,27 @@ import { Text } from "~/components/ui/text";
 import DropdownMenuMovies from "~/src/components/dropdown-menu-movies";
 import { API_KEY, MOVIE_BASE_URL, TV_BASE_URL } from "@env";
 
+interface MovieData {
+  id: number;
+  title?: string;
+  name?: string;
+  popularity: number;
+  release_date?: string;
+  poster_path?: string;
+  media_type?: string;
+}
 
-// const MOVIE_BASE_URL = "https://api.themoviedb.org/3/movie";
-// const TV_BASE_URL = "https://api.themoviedb.org/3/tv";
+interface TvShowData {
+  id: number;
+  name: string;
+  poster_path?: string;
+  popularity: number;
+  first_air_date?: string;
+  media_type?: string;
+}
 
 export default function TabsScreen() {
   // General
-  const apiKey = "14de32a8be1f00851f479285b73ccfc6";
   const [loading, setLoading] = useState(false);
 
   // For "1.Movies" tab
@@ -28,7 +42,6 @@ export default function TabsScreen() {
     { label: "Upcoming", value: "upcoming" },
   ];
 
-  const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [value, setValue] = React.useState("movies");
   const [selectedMoviesOption, setSelectedMoviesOption] = useState("popular");
   const [movies, setMovies] = useState<
@@ -41,6 +54,7 @@ export default function TabsScreen() {
       poster_path?: string;
       profile_path?: string;
       known_for?: { poster_path?: string }[];
+      media_type?: string;
     }[]
   >([]);
 
@@ -48,7 +62,7 @@ export default function TabsScreen() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${MOVIE_BASE_URL}/${category}?api_key=${apiKey}&language=en-US&page=1`,
+        `${MOVIE_BASE_URL}/${category}?api_key=${API_KEY}&language=en-US&page=1`,
       );
       const data = await response.json();
       setMovies(data.results || []);
@@ -63,7 +77,7 @@ export default function TabsScreen() {
   const [selectedSearchTypeOption, setSelectedSearchTypeOption] =
     useState("multi");
   const [searchQuery, setSearchQuery] = useState("");
-  const [multi, setMulti] = useState([]);
+  const [searchResults, setSearchResults] = useState(null);
 
   const searchTypeOptions = [
     { label: "Multi", value: "multi" },
@@ -83,13 +97,17 @@ export default function TabsScreen() {
           : "movie";
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/${endpoint}?api_key=${apiKey}&language=en-US&query=${encodeURIComponent(
+        `https://api.themoviedb.org/3/search/${endpoint}?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(
           query,
         )}&page=1&include_adult=false`,
       );
 
       const data = await response.json();
-      setMovies(data.results || []);
+      setSearchResults(
+        (data.results || []).filter(
+          (item: MovieData | TvShowData) => item.media_type !== "person",
+        ),
+      );
     } catch (error) {
       console.error("Error fetching search results:", error);
     } finally {
@@ -113,6 +131,7 @@ export default function TabsScreen() {
       poster_path?: string;
       popularity: number;
       first_air_date?: string;
+      media_type?: string;
     }[]
   >([]);
 
@@ -120,11 +139,9 @@ export default function TabsScreen() {
     setLoading(true);
     try {
       const response = await fetch(
-         `${TV_BASE_URL}/${category}?api_key=${apiKey}&language=en-US&page=1`
+        `${TV_BASE_URL}/${category}?api_key=${API_KEY}&language=en-US&page=1`,
       );
       const data = await response.json();
-      
-      console.log(`Fetched TV Shows for ${category}`, data.results)
 
       setTvShows(data.results || []);
     } catch (error) {
@@ -170,6 +187,7 @@ export default function TabsScreen() {
           {/* Dropdown Menu */}
           <View className="flex items-center justify-center w-full">
             <DropdownMenuMovies
+              justifyCenter={true}
               widthPercentage={50}
               options={moviesOptions}
               selectedOption={selectedMoviesOption}
@@ -248,6 +266,7 @@ export default function TabsScreen() {
             <View className="flex-row items-center gap-2">
               <View className="flex-1">
                 <DropdownMenuMovies
+                  justifyCenter={false}
                   options={searchTypeOptions}
                   selectedOption={selectedSearchTypeOption}
                   setSelectedOption={setSelectedSearchTypeOption}
@@ -267,64 +286,71 @@ export default function TabsScreen() {
             </View>
             <Text>Please select a search type</Text>
           </View>
+
           {/* a list of search results */}
-          <View className="gap-1">
-            {loading ? (
-              <View className="flex-row items-center justify-center gap-2 py-4">
-                <ActivityIndicator size="small" color="#00897b" />
-                <Text className="text-gray-500 text-lg">Loading results</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={movies}
-                keyboardShouldPersistTaps="handled"
-                renderItem={({ item }) => {
-                  const imagePath =
-                    item.poster_path ||
-                    item.profile_path ||
-                    (item.known_for?.find((k) => k.poster_path)?.poster_path ??
-                      null);
-
-                  return (
-                    <View className="border-b border-gray-300 py-4 flex-row gap-4">
-                      <Image
-                        source={{
-                          uri: imagePath
-                            ? `https://image.tmdb.org/t/p/w500${imagePath}`
-                            : "https://via.placeholder.com/100",
-                        }}
-                        className="w-full h-full"
-                        style={{ width: 100, height: 100 }}
-                      />
-                      <View className="flex-1 flex-col gap-1">
-                        <Text className="text-lg font-semibold w-full">
-                          {item.title ?? item.name ?? "Unknown"}
-                        </Text>
-                        {typeof item.popularity === "number" && (
-                          <Text className="text-sm text-gray-500">
-                            Popularity: {item.popularity.toFixed(2)}
-                          </Text>
-                        )}
-
-                        <Text className="text-sm text-gray-500">
-                          Release Date: {item.release_date}
-                        </Text>
-                        <Button
-                          size="sm"
-                          style={{
-                            backgroundColor: "#06B6D4",
+          {!searchResults && !loading ? (
+            <Text className="text-center text-gray-700 text-2xl font-extrabold ">
+              Please initiate a search
+            </Text>
+          ) : (
+            <View className="gap-1">
+              {loading ? (
+                <View className="flex-row items-center justify-center gap-2 py-4">
+                  <ActivityIndicator size="small" color="#00897b" />
+                  <Text className="text-gray-500 text-lg">Loading results</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={searchResults}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item }) => {
+                    return (
+                      <View className="border-b border-gray-300 py-4 flex-row gap-4">
+                        <Image
+                          source={{
+                            uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
                           }}
-                          onPress={() => router.push(`/${item.id}`)}
-                        >
-                          <Text style={{ color: "white" }}>More Details</Text>
-                        </Button>
+                          className="w-full h-full"
+                          style={{ width: 100, height: 100 }}
+                        />
+                        <View className="flex-1 flex-col gap-1">
+                          <Text className="text-lg font-semibold w-full">
+                            {item.title ?? item.name ?? "Unknown"}
+                          </Text>
+                          {typeof item.popularity === "number" && (
+                            <Text className="text-sm text-gray-500">
+                              Popularity: {item.popularity.toFixed(2)}
+                            </Text>
+                          )}
+
+                          <Text className="text-sm text-gray-500">
+                            Release Date: {item.release_date}
+                          </Text>
+                          <Button
+                            size="sm"
+                            style={{
+                              backgroundColor: "#06B6D4",
+                            }}
+                            onPress={() => {
+                              console.log("Item clicked:", item); // ここで item の内容をログ出力
+                              console.log("Media Type:", item.media_type); // media_type の値を確認
+                              if (item.media_type === "tv") {
+                                router.push(`/tv-show/${item.id}`);
+                              } else if (item.media_type === "movie") {
+                                router.push(`/movie/${item.id}`);
+                              }
+                            }}
+                          >
+                            <Text style={{ color: "white" }}>More Details</Text>
+                          </Button>
+                        </View>
                       </View>
-                    </View>
-                  );
-                }}
-              />
-            )}
-          </View>
+                    );
+                  }}
+                />
+              )}
+            </View>
+          )}
         </TabsContent>
 
         {/* 3_TV Shows */}
@@ -332,6 +358,7 @@ export default function TabsScreen() {
           {/* Dropdown Menu */}
           <View className="flex items-center justify-center w-full">
             <DropdownMenuMovies
+              justifyCenter={true}
               widthPercentage={50}
               options={tvShowsOptions}
               selectedOption={selectedTvShowsOption}

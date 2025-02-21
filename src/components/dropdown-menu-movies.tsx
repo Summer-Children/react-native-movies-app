@@ -9,6 +9,7 @@ interface DropdownMenuMoviesProps {
   options: { label: string; value: string }[];
   selectedOption: string;
   setSelectedOption: (value: string) => void;
+  justifyCenter?: boolean;
 }
 
 export function DropdownMenuMovies({
@@ -16,6 +17,7 @@ export function DropdownMenuMovies({
   options,
   selectedOption,
   setSelectedOption,
+  justifyCenter
 }: DropdownMenuMoviesProps) {
   const [isModalVisible, setModalVisible] = useState(false);
 
@@ -24,8 +26,10 @@ export function DropdownMenuMovies({
     setModalVisible(false);
   };
 
+
+
   return (
-    <View className="w-full ">
+    <View className={`w-full ${justifyCenter ? "flex-row justify-center" : ""}`}>
       <TouchableOpacity
         onPress={() => {
           setModalVisible(true);
@@ -60,8 +64,12 @@ export function DropdownMenuMovies({
             data={options}
             keyExtractor={(item) => item.value}
             renderItem={({ item }) => (
+              console.log("item.value", item.value),
+              console.log("selectedOption", selectedOption),
+              console.log("item.value === selectedOption", item.value === selectedOption),
+
               <TouchableOpacity
-                className={`flex-row items-center gap-4 px-8 py-2 rounded-md ${
+                className={`flex-row items-center gap-4 px-8 py-2 rounded-sm ${
                   item.value === selectedOption ? "bg-green-500 " : "bg-white "
                 }`}
                 onPress={() => handleSelect(item.value)}

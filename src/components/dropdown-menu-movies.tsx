@@ -1,17 +1,22 @@
-import React, { useState } from "react";
-import { View, TouchableOpacity, Modal, FlatList, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { CornerDownLeft } from "lucide-react-native";
+import { Check } from "lucide-react-native";
+import React, { useState } from "react";
+import { FlatList, Modal, Text, TouchableOpacity, View } from "react-native";
 
-const options = [
-  { label: "Now Playing", value: "now_playing" },
-  { label: "Popular", value: "popular" },
-  { label: "Top Rated", value: "top_rated" },
-  { label: "Upcoming", value: "upcoming" },
-];
 
-export function DropdownMenuMovies() {
-  const [selectedOption, setSelectedOption] = useState("popular");
+interface DropdownMenuMoviesProps {
+  widthPercentage?: number;
+  options: { label: string; value: string }[];
+  selectedOption: string;
+  setSelectedOption: (value: string) => void;
+}
+
+export function DropdownMenuMovies({
+  widthPercentage,
+  options,
+  selectedOption,
+  setSelectedOption,
+}: DropdownMenuMoviesProps) {
   const [isModalVisible, setModalVisible] = useState(false);
 
   const handleSelect = (value: string) => {
@@ -19,21 +24,19 @@ export function DropdownMenuMovies() {
     setModalVisible(false);
   };
 
-  console.log(isModalVisible);
-
   return (
-    <View className="w-full px-4">
+    <View className="w-full ">
       <TouchableOpacity
         onPress={() => {
-          console.log("Before:", isModalVisible);
           setModalVisible(true);
-          console.log("After:", isModalVisible);
         }}
+        className="self-stretch flex-row items-center justify-between px-3 py-1  rounded-sm  "
+        style={{ width: widthPercentage ? `${widthPercentage}%` : undefined, borderWidth: 1, borderColor: "lightgrey" }}
       >
-        <Text className="text-base text-black">
+        <Text className="text-base text-gray-600">
           {options.find((opt) => opt.value === selectedOption)?.label}
         </Text>
-        <MaterialIcons name="arrow-drop-down" size={24} color="black" />
+        <MaterialIcons name="arrow-drop-down" size={16} color="grey" />
       </TouchableOpacity>
 
       <Modal
@@ -45,29 +48,37 @@ export function DropdownMenuMovies() {
         {/* モーダルの背景（タップで閉じる） */}
         <TouchableOpacity
           activeOpacity={1}
-          className="flex-1 bg-black/40"
+          className="flex-1"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }} 
           onPress={() => setModalVisible(false)}
         />
 
         {/* 画面下部に固定されたモーダルコンテンツ */}
-        <View className="absolute bottom-0 left-0 right-0 bg-white py-3 rounded-t-2xl">
+        <View className="absolute bottom-0 left-0 right-0 bg-white rounded-lg px-2 py-4">
           <FlatList
+            className="py-4 rounded-lg"
             data={options}
             keyExtractor={(item) => item.value}
             renderItem={({ item }) => (
               <TouchableOpacity
-                className={`px-4 py-3 ${
-                  item.value === selectedOption ? "bg-teal-500" : "bg-white"
+                className={`flex-row items-center gap-4 px-8 py-2 rounded-md ${
+                  item.value === selectedOption ? "bg-green-500 " : "bg-white "
                 }`}
                 onPress={() => handleSelect(item.value)}
               >
                 <Text
-                  className={`text-lg text-center ${
-                    item.value === selectedOption ? "text-white" : "text-black"
+                  className={` ${
+                    item.value === selectedOption
+                      ? " text-white"
+                      : " text-black"
                   }`}
                 >
                   {item.label}
                 </Text>
+
+                {item.value === selectedOption && (
+                  <Check size={24} color="white" />
+                )}
               </TouchableOpacity>
             )}
           />
